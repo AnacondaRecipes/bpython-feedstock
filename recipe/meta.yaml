@@ -43,7 +43,6 @@ test:
     - bpython.test
     - bpython.test.fodder
     - bpython.translations
-    - xdg
   commands:
     - bpython --help
     - bpython-curses --help
