@@ -1,5 +1,5 @@
 {% set name = "bpython" %}
-{% set version = "0.20.1" %}
+{% set version = "0.25" %}
 
 package:
   name: {{ name|lower }}
@@ -7,32 +7,45 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 6e7738806013b469be57b0117082b9c4557ed7c92c70ceb79f96d674d89c7503
+  sha256: c246fc909ef6dcc26e9d8cb4615b0e6b1613f3543d12269b19ffd0782166c65b
 
 build:
-  number: 1
+  number: 0
   entry_points:
     - bpython = bpython.curtsies:main
-    - bpython-curses = bpython.cli:main
     - bpython-urwid = bpython.urwid:main
     - bpdb = bpdb:main
-  script: {{ PYTHON }} -m pip install . -vv
-  skip: true  # [py2k]
-  skip: true  # [win]
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  # curtsies available from py310+
+  skip: True  # [py<310]
+  # ModuleNotFoundError: No module named 'termios'
+  # https://docs.python.org/3/library/tty.html
+  # Because it requires the termios module, it will work only on Unix.
+  # Issue created: https://github.com/bpython/curtsies/issues/178
+  skip: True  # [win]
 
 requirements:
   host:
     - pip
     - python
+    - wheel
+    - setuptools >=62.4.0
   run:
-    - curtsies >=0.1.18
+    - python
+    - curtsies >=0.4.0
+    - cwcwidth
     - greenlet
     - pygments
-    - python
+    - pyxdg
     - requests
-    - six >=1.5
-    - urwid  # [unix]
-    - watchdog
+    - typing_extensions # [py<311]
+  run_constrained:
+    - jedi >=0.16
+    # not work on osx if version <=2.1.1, error msg:
+    # urwid 2.1.1 is not supported on this platform.
+    # if version >3, error msg:
+    # AttributeError: 'Index' object has no attribute '_data'. Did you mean: 'data'?
+    - urwid >2.1.1,<3
 
 test:
   imports:
@@ -43,18 +56,27 @@ test:
     - bpython.test.fodder
     - bpython.translations
   commands:
+    - pip check
     - bpython --help
-    - bpython-curses --help
     - bpython-urwid --help
     - bpdb --help
+    - pytest --pyargs bpython.test
+  requires:
+    - pip
+    - pytest
+    - urwid >2.1.1,<3
 
 about:
-  home: http://www.bpython-interpreter.org/
+  home: https://www.bpython-interpreter.org
+  summary: Fancy Interface to the Python Interpreter
   license: MIT
   license_family: MIT
   license_file: LICENSE
-  summary: Fancy Interface to the Python Interpreter
+  description: |
+    bpython is a lightweight Python interpreter that adds several features common to IDEs.
+    These features include syntax highlighting, expected parameter list, auto-indentation, and autocompletion.
   dev_url: https://github.com/bpython/bpython
+  doc_url: https://docs.bpython-interpreter.org
 
 extra:
   recipe-maintainers:
